@@ -1,0 +1,113 @@
+# 依赖包目录
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 构建输出目录
+dist/
+build/
+*.tsbuildinfo
+
+# 环境变量文件 
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 编辑器配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 日志文件
+logs/
+*.log
+
+# 运行时数据
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# 测试覆盖率报告
+coverage/
+*.lcov
+
+# nyc 测试覆盖率
+.nyc_output
+
+# 其他依赖目录
+jspm_packages/
+
+# npm 缓存目录
+.npm
+
+# eslint 缓存
+.eslintcache
+
+# 微捆绑器缓存
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# REPL 历史记录
+.node_repl_history
+
+# npm pack 输出
+*.tgz
+
+# Yarn 完整性文件
+.yarn-integrity
+
+# Parcel 缓存
+.cache
+.parcel-cache
+
+# Vite 缓存
+.vite/
+
+# Next.js 构建输出
+.next
+
+# Nuxt.js 构建输出
+.nuxt
+dist
+
+# Storybook 构建输出
+.out
+.storybook-out
+
+# 临时文件夹
+tmp/
+temp/
+
+# API 密钥和敏感信息
+config/keys.js
+config/prod.js
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 备份文件
+*.bak
+*.backup
+*.old
