@@ -13,7 +13,9 @@
       <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
         <div class="sidebar-header">
           <div class="logo-section">
-            <div class="logo">🤖</div>
+            <div v-if="!sidebarCollapsed" class="logo">
+              <img src="/avatars/Chino_small.png" alt="Logo" class="logo-image" />
+            </div>
             <h1 v-if="!sidebarCollapsed" class="app-title">AI 问答助手</h1>
           </div>
           <button @click="toggleSidebar" class="sidebar-toggle">
@@ -160,10 +162,6 @@
                 </button>
               </div>
               <div class="input-footer">
-                <div class="input-hints">
-                  <span class="hint">Enter 发送</span>
-                  <span class="hint">Shift + Enter 换行</span>
-                </div>
                 <div class="char-count" :class="{ warning: question.length > 800 }">
                   {{ question.length }}/1000
                 </div>
@@ -311,6 +309,13 @@ const loadConversations = () => {
 const toggleTheme = () => {
   isDark.value = !isDark.value
   localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+  
+  // 确保dark类也应用到document.documentElement上，以便全局CSS变量生效
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
 }
 
 // 侧边栏切换
@@ -537,6 +542,13 @@ onMounted(() => {
     isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
   }
 
+  // 确保初始化时也设置document.documentElement的dark类
+  if (isDark.value) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
+
   const savedSidebarState = localStorage.getItem('sidebar_collapsed')
   if (savedSidebarState) {
     sidebarCollapsed.value = savedSidebarState === 'true'
@@ -554,7 +566,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style>
 /* 全局变量 - 浅色主题 */
 :root {
   --bg-primary: #f8fafb;
@@ -604,6 +616,11 @@ onMounted(() => {
 /* 基础样式 */
 * {
   box-sizing: border-box;
+}
+
+html {
+  background: var(--bg-primary);
+  transition: background-color 0.3s ease;
 }
 
 body {
@@ -707,6 +724,21 @@ body {
 
 .sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
+  background: transparent;
+  border-right: none;
+  box-shadow: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+  background: transparent;
+  border-bottom: none;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .sidebar-header {
@@ -726,15 +758,29 @@ body {
 }
 
 .logo {
-  font-size: 24px;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-gradient);
-  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
   flex-shrink: 0;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.dark .logo {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .app-title {
@@ -1105,9 +1151,9 @@ body {
   max-height: 60vh;
   overflow-y: auto;
   padding: 16px;
-  background: var(--bg-secondary);
+  background: transparent;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-primary);
+  border: none;
 }
 
 .message {
@@ -1304,15 +1350,15 @@ body {
 .input-section {
   position: sticky;
   bottom: 0;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafb 100%);
+  background: var(--bg-primary);
   padding: 16px 0;
-  border-top: 1px solid #d1e3ed;
+  border-top: 1px solid var(--border-primary);
   box-shadow: 0 -2px 12px rgba(74, 144, 226, 0.08);
 }
 
 /* 深色模式下的输入区域 */
 .dark .input-section {
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  background: var(--bg-primary);
   border-top: 1px solid var(--border-primary);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
 }
@@ -1327,8 +1373,8 @@ body {
   display: flex;
   gap: 8px;
   align-items: flex-end;
-  background: #ffffff;
-  border: 2px solid #d1e3ed;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-primary);
   border-radius: var(--radius-md);
   padding: 12px;
   transition: all 0.2s ease;
@@ -1343,7 +1389,7 @@ body {
 }
 
 .input-wrapper:focus-within {
-  border-color: #4a90e2;
+  border-color: var(--accent-primary);
   box-shadow: 0 2px 12px rgba(74, 144, 226, 0.15);
 }
 
@@ -1409,22 +1455,11 @@ body {
 
 .input-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   font-size: 12px;
   color: var(--text-tertiary);
   padding: 0 4px;
-}
-
-.input-hints {
-  display: flex;
-  gap: 16px;
-}
-
-.hint {
-  padding: 2px 6px;
-  background: var(--bg-tertiary);
-  border-radius: 4px;
 }
 
 .char-count {
@@ -1534,13 +1569,7 @@ body {
   }
   
   .input-footer {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-  }
-  
-  .input-hints {
-    gap: 8px;
+    justify-content: flex-end;
   }
 }
 
