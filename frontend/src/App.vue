@@ -72,79 +72,76 @@
 
       <!-- 主内容区 -->
       <main class="main-content">
-        <!-- 滚动容器 - 把滚动条放到右边缘 -->
-        <div class="scroll-container" ref="scrollContainer">
-          <!-- 问答界面 -->
-          <div class="chat-container">
-            <!-- 欢迎区域 -->
-            <div v-if="!hasConversation" class="welcome-section">
-              <div class="welcome-content">
-                <div class="welcome-icon">✨</div>
-                <h2 class="welcome-title">你好！我是 AI 助手</h2>
-                <p class="welcome-subtitle">基于阿里云通义千问，为您提供智能问答服务</p>
-                <div class="example-questions">
-                  <div class="example-title">试试这些问题：</div>
-                  <div class="example-list">
-                    <button 
-                      v-for="example in exampleQuestions" 
-                      :key="example"
-                      @click="setQuestion(example)"
-                      class="example-button"
-                    >
-                      {{ example }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 对话历史 -->
-            <div v-if="hasConversation" class="conversation-area">
-              <div class="messages" ref="messagesContainer">
-                <div v-for="(msg, index) in currentMessages" :key="index" class="message" :class="msg.type">
-                  <div class="message-avatar">
-                    <img 
-                      v-if="msg.type === 'user'" 
-                      src="/avatars/Chino.jpg"
-                      alt="用户头像"
-                      class="avatar-image"
-                    />
-                    <img 
-                      v-else 
-                      src="/avatars/1741874821056.jpeg"
-                      alt="AI助手头像"
-                      class="avatar-image"
-                    />
-                  </div>
-                  <div class="message-content">
-                    <div class="message-text">{{ msg.content }}</div>
-                    <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
-                  </div>
+        <!-- 问答界面 -->
+        <div class="chat-container">
+          <!-- 欢迎区域 -->
+          <div v-if="!hasConversation" class="welcome-section">
+            <div class="welcome-content">
+              <div class="welcome-icon">✨</div>
+              <h2 class="welcome-title">你好！我是 AI 助手</h2>
+              <p class="welcome-subtitle">基于阿里云通义千问，为您提供智能问答服务</p>
+              <div class="example-questions">
+                <div class="example-title">试试这些问题：</div>
+                <div class="example-list">
                   <button 
-                    v-if="msg.type === 'assistant' && msg.content"
-                    @click="copyMessage(msg.content, index)"
-                    class="copy-message-btn"
-                    :title="copiedIndex === index ? '已复制' : '复制回答'"
+                    v-for="example in exampleQuestions" 
+                    :key="example"
+                    @click="setQuestion(example)"
+                    class="example-button"
                   >
-                    <span v-if="copiedIndex === index">✅</span>
-                    <span v-else>📋</span>
+                    {{ example }}
                   </button>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- 错误提示 -->
-            <div v-if="error" class="error-toast">
-              <div class="error-content">
-                <span class="error-icon">⚠️</span>
-                <span class="error-text">{{ error }}</span>
-                <button @click="error = ''" class="error-close">✕</button>
+          <!-- 对话历史 -->
+          <div v-if="hasConversation" class="conversation-area">
+            <div class="messages" ref="messagesContainer">
+              <div v-for="(msg, index) in currentMessages" :key="index" class="message" :class="msg.type">
+                <div class="message-avatar">
+                  <img 
+                    v-if="msg.type === 'user'" 
+                    src="/avatars/Chino.jpg"
+                    alt="用户头像"
+                    class="avatar-image"
+                  />
+                  <img 
+                    v-else 
+                    src="/avatars/1741874821056.jpeg"
+                    alt="AI助手头像"
+                    class="avatar-image"
+                  />
+                </div>
+                <div class="message-content">
+                  <div class="message-text">{{ msg.content }}</div>
+                  <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
+                </div>
+                <button 
+                  v-if="msg.type === 'assistant' && msg.content"
+                  @click="copyMessage(msg.content, index)"
+                  class="copy-message-btn"
+                  :title="copiedIndex === index ? '已复制' : '复制回答'"
+                >
+                  <span v-if="copiedIndex === index">✅</span>
+                  <span v-else>📋</span>
+                </button>
               </div>
+            </div>
+          </div>
+
+          <!-- 错误提示 -->
+          <div v-if="error" class="error-toast">
+            <div class="error-content">
+              <span class="error-icon">⚠️</span>
+              <span class="error-text">{{ error }}</span>
+              <button @click="error = ''" class="error-close">✕</button>
             </div>
           </div>
         </div>
 
-        <!-- 输入区域 - 移到主内容区底部 -->
+        <!-- 输入区域 - 现在随内容滚动 -->
         <div class="input-section">
           <!-- 背景遮罩层 -->
           <div class="input-mask"></div>
@@ -517,12 +514,8 @@ const handleAsk = async () => {
 // 滚动到底部
 const scrollToBottom = () => {
   nextTick(() => {
-    // 如果messages容器有滚动条，滚动到底部
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-    }
-    // 否则滚动主容器
-    else if (scrollContainer.value) {
+    // 滚动到底部 - 现在使用scroll-container
+    if (scrollContainer.value) {
       scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
     }
   })
@@ -1081,13 +1074,13 @@ html, body {
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  display: block;
   transition: margin-left 0.3s ease;
   background: var(--bg-primary);
   position: relative;
-  overflow: hidden;
+  padding-bottom: 140px; /* 避免滚动条被输入区遮挡 */
 }
 
 /* 深色模式下的主内容区 */
@@ -1100,37 +1093,32 @@ html, body {
 }
 
 /* 滚动容器 - 把滚动条放到右边缘 */
-.scroll-container {
-  height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
 
-/* 聊天容器 - 不再负责滚动，只负责布局 */
+
+/* 聊天容器 - 只负责内容宽度和内边距 */
 .chat-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 24px;
   padding-bottom: 140px; /* 为输入区域留出空间 */
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
   width: 100%;
   position: relative;
   z-index: 1;
   background: transparent;
-  min-height: 100%;
 }
 
-/* 对话区域高度限制 - 大约9条消息的高度 */
+/* 对话区域 - 让内容自然流动 */
 .conversation-area {
-  max-height: calc(100vh - 220px); /* 减去输入区域和padding的高度 */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .messages {
-  max-height: calc(9 * 120px); /* 每条消息大约120px高度，9条消息 */
-  overflow-y: auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* 欢迎区域 */
@@ -1218,14 +1206,12 @@ html, body {
   box-shadow: 0 2px 8px rgba(96, 165, 250, 0.2);
 }
 
-/* 对话区域 */
+/* 对话区域（移动端max-height限制去除，交由整体滚动） */
 .conversation-area {
   display: flex;
   flex-direction: column;
   gap: 16px;
   overflow: visible;
-  min-height: 0;
-  max-height: calc(100vh - 220px); /* 减去输入区域和padding的高度 */
 }
 
 .messages {
@@ -1237,9 +1223,6 @@ html, body {
   background: transparent;
   border-radius: var(--radius-md);
   border: none;
-  min-height: 0;
-  max-height: calc(9 * 120px); /* 每条消息大约120px高度，9条消息 */
-  overflow-y: auto;
 }
 
 .message {
