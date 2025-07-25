@@ -154,7 +154,7 @@
                 @keydown.enter.exact.prevent="handleAsk"
                 @keydown.shift.enter.exact="() => {}"
                 @input="onInput"
-                rows="1"
+                rows="3"
                 ref="inputRef"
               ></textarea>
               <button
@@ -509,7 +509,12 @@ const handleAsk = async () => {
 // 滚动到底部
 const scrollToBottom = () => {
   nextTick(() => {
-    if (scrollContainer.value) {
+    // 如果messages容器有滚动条，滚动到底部
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    }
+    // 否则滚动主容器
+    else if (scrollContainer.value) {
       scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
     }
   })
@@ -1094,6 +1099,16 @@ html, body {
   min-height: 100%;
 }
 
+/* 对话区域高度限制 - 大约9条消息的高度 */
+.conversation-area {
+  max-height: calc(100vh - 220px); /* 减去输入区域和padding的高度 */
+}
+
+.messages {
+  max-height: calc(9 * 120px); /* 每条消息大约120px高度，9条消息 */
+  overflow-y: auto;
+}
+
 /* 欢迎区域 */
 .welcome-section {
   display: flex;
@@ -1186,6 +1201,7 @@ html, body {
   gap: 16px;
   overflow: visible;
   min-height: 0;
+  max-height: calc(100vh - 220px); /* 减去输入区域和padding的高度 */
 }
 
 .messages {
@@ -1198,6 +1214,8 @@ html, body {
   border-radius: var(--radius-md);
   border: none;
   min-height: 0;
+  max-height: calc(9 * 120px); /* 每条消息大约120px高度，9条消息 */
+  overflow-y: auto;
 }
 
 .message {
@@ -1450,7 +1468,7 @@ html, body {
 .input-wrapper {
   display: flex;
   gap: 8px;
-  align-items: flex-end;
+  align-items: flex-start;
   background: #ffffff;
   border: 1px solid rgba(209, 227, 237, 0.6);
   border-radius: var(--radius-md);
@@ -1490,7 +1508,7 @@ html, body {
   font-size: 16px;
   line-height: 1.5;
   resize: none;
-  min-height: 24px;
+  min-height: 72px;
   max-height: 120px;
   font-family: inherit;
 }
@@ -1513,6 +1531,7 @@ html, body {
   font-size: 18px;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .send-button:hover:not(:disabled) {
