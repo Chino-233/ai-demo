@@ -135,36 +135,38 @@
               <button @click="error = ''" class="error-close">✕</button>
             </div>
           </div>
+        </div>
 
-          <!-- 输入区域 -->
-          <div class="input-section">
-            <div class="input-container">
-              <div class="input-wrapper">
-                <textarea
-                  v-model="question"
-                  :placeholder="loading ? '正在思考中...' : '输入你的问题，按 Enter 发送'"
-                  class="question-input"
-                  :disabled="loading"
-                  @keydown.enter.exact.prevent="handleAsk"
-                  @keydown.shift.enter.exact="() => {}"
-                  @input="onInput"
-                  rows="1"
-                  ref="inputRef"
-                ></textarea>
-                <button
-                  @click="handleAsk"
-                  :disabled="loading || !question.trim()"
-                  class="send-button"
-                  :class="{ loading: loading }"
-                >
-                  <span v-if="loading" class="loading-spinner">⏳</span>
-                  <span v-else>🚀</span>
-                </button>
-              </div>
-              <div class="input-footer">
-                <div class="char-count" :class="{ warning: question.length > 800 }">
-                  {{ question.length }}/1000
-                </div>
+        <!-- 输入区域 - 移到主内容区底部 -->
+        <div class="input-section">
+          <!-- 背景遮罩层 -->
+          <div class="input-mask"></div>
+          <div class="input-container">
+            <div class="input-wrapper">
+              <textarea
+                v-model="question"
+                :placeholder="loading ? '正在思考中...' : '输入你的问题，按 Enter 发送'"
+                class="question-input"
+                :disabled="loading"
+                @keydown.enter.exact.prevent="handleAsk"
+                @keydown.shift.enter.exact="() => {}"
+                @input="onInput"
+                rows="1"
+                ref="inputRef"
+              ></textarea>
+              <button
+                @click="handleAsk"
+                :disabled="loading || !question.trim()"
+                class="send-button"
+                :class="{ loading: loading }"
+              >
+                <span v-if="loading" class="loading-spinner">⏳</span>
+                <span v-else>🚀</span>
+              </button>
+            </div>
+            <div class="input-footer">
+              <div class="char-count" :class="{ warning: question.length > 800 }">
+                {{ question.length }}/1000
               </div>
             </div>
           </div>
@@ -322,6 +324,23 @@ const toggleTheme = () => {
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
   localStorage.setItem('sidebar_collapsed', sidebarCollapsed.value.toString())
+  
+  // 动态更新输入区域的位置
+  nextTick(() => {
+    updateInputSectionPosition()
+  })
+}
+
+// 更新输入区域位置
+const updateInputSectionPosition = () => {
+  const inputSection = document.querySelector('.input-section')
+  if (inputSection) {
+    if (sidebarCollapsed.value) {
+      inputSection.style.left = 'var(--sidebar-collapsed-width)'
+    } else {
+      inputSection.style.left = 'var(--sidebar-width)'
+    }
+  }
 }
 
 // 设置问题（来自示例问题）
@@ -563,6 +582,11 @@ onMounted(() => {
     // 如果有对话历史，默认选中第一个
     currentConversationId.value = conversations.value[0].id
   }
+  
+  // 初始化输入区域位置
+  nextTick(() => {
+    updateInputSectionPosition()
+  })
 })
 </script>
 
@@ -683,12 +707,6 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   animation-delay: -14s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-30px) rotate(120deg); }
-  66% { transform: translateY(30px) rotate(240deg); }
 }
 
 /* 主布局 */
@@ -885,7 +903,7 @@ body {
 
 .conversation-item {
   padding: 12px;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(232, 242, 248, 0.6);
   border: 1px solid #b8d4e3;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -898,7 +916,7 @@ body {
 }
 
 .conversation-item:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(232, 242, 248, 0.8);
   border-color: #4a90e2;
   transform: translateX(2px);
   box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
@@ -1028,12 +1046,13 @@ body {
   display: flex;
   flex-direction: column;
   transition: margin-left 0.3s ease;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafb 100%);
+  background: var(--bg-primary);
+  position: relative;
 }
 
 /* 深色模式下的主内容区 */
 .dark .main-content {
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  background: var(--bg-primary);
 }
 
 .sidebar.collapsed + .main-content {
@@ -1050,6 +1069,11 @@ body {
   flex-direction: column;
   gap: 24px;
   width: 100%;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  padding-bottom: 140px; /* 为输入区域留出空间 */
+  background: transparent;
 }
 
 /* 欢迎区域 */
@@ -1141,6 +1165,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .messages {
@@ -1148,12 +1174,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: 60vh;
   overflow-y: auto;
   padding: 16px;
   background: transparent;
   border-radius: var(--radius-md);
   border: none;
+  min-height: 0;
 }
 
 .message {
@@ -1207,20 +1233,24 @@ body {
 }
 
 .message-text {
-  background: var(--message-bg);
+  background: rgba(240, 246, 250, 0.8);
   padding: 12px 16px;
   border-radius: 18px 18px 18px 4px;
-  border: 1px solid var(--border-primary);
+  border: 1px solid rgba(209, 227, 237, 0.5);
   line-height: 1.6;
   word-wrap: break-word;
   white-space: pre-wrap;
   max-width: 70%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
+  backdrop-filter: blur(10px);
 }
 
 .dark .message-text {
+  background: rgba(71, 85, 105, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.5);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
 }
 
 .message.user .message-text {
@@ -1241,15 +1271,15 @@ body {
   width: 0;
   height: 0;
   border: 6px solid transparent;
-  border-right-color: var(--message-bg);
-  border-bottom-color: var(--message-bg);
+  border-right-color: rgba(240, 246, 250, 0.8);
+  border-bottom-color: rgba(240, 246, 250, 0.8);
   border-left: none;
   border-top: none;
 }
 
 .dark .message:not(.user) .message-text::before {
-  border-right-color: var(--message-bg);
-  border-bottom-color: var(--message-bg);
+  border-right-color: rgba(71, 85, 105, 0.8);
+  border-bottom-color: rgba(71, 85, 105, 0.8);
 }
 
 /* 用户消息气泡小尾巴 */
@@ -1277,8 +1307,8 @@ body {
   width: 32px;
   height: 32px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-primary);
-  background: var(--bg-secondary);
+  border: 1px solid rgba(209, 227, 237, 0.5);
+  background: rgba(232, 242, 248, 0.6);
   color: var(--text-secondary);
   cursor: pointer;
   display: flex;
@@ -1287,12 +1317,23 @@ body {
   opacity: 0.7;
   transition: all 0.2s ease;
   align-self: flex-start;
+  backdrop-filter: blur(10px);
 }
 
 .copy-message-btn:hover {
   opacity: 1;
-  background: var(--bg-tertiary);
+  background: rgba(214, 233, 245, 0.8);
   transform: scale(1.05);
+}
+
+/* 深色模式下的复制按钮 */
+.dark .copy-message-btn {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.dark .copy-message-btn:hover {
+  background: rgba(51, 65, 85, 0.8);
 }
 
 /* 错误提示 */
@@ -1348,55 +1389,78 @@ body {
 
 /* 输入区域 */
 .input-section {
-  position: sticky;
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  background: transparent;
+  padding: 16px 24px;
+  border-top: none;
+  box-shadow: none;
+  z-index: 10;
+  transition: left 0.3s ease;
+}
+
+/* 背景遮罩层 */
+.input-mask {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
   bottom: 0;
   background: var(--bg-primary);
-  padding: 16px 0;
-  border-top: 1px solid var(--border-primary);
-  box-shadow: 0 -2px 12px rgba(74, 144, 226, 0.08);
+  z-index: -1;
 }
 
 /* 深色模式下的输入区域 */
 .dark .input-section {
-  background: var(--bg-primary);
-  border-top: 1px solid var(--border-primary);
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+  background: transparent;
+  border-top: none;
+  box-shadow: none;
 }
 
 .input-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .input-wrapper {
   display: flex;
   gap: 8px;
   align-items: flex-end;
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-primary);
+  background: #ffffff;
+  border: 1px solid rgba(209, 227, 237, 0.6);
   border-radius: var(--radius-md);
   padding: 12px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.05);
+  box-shadow: 0 2px 12px rgba(74, 144, 226, 0.08);
+  backdrop-filter: blur(20px);
 }
 
 /* 深色模式下的输入框 */
 .dark .input-wrapper {
-  background: var(--bg-secondary);
-  border: 2px solid var(--border-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  background: #1e293b;
+  border: 1px solid rgba(51, 65, 85, 0.6);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(20px);
 }
 
 .input-wrapper:focus-within {
-  border-color: var(--accent-primary);
-  box-shadow: 0 2px 12px rgba(74, 144, 226, 0.15);
+  background: #ffffff;
+  border-color: rgba(74, 144, 226, 0.5);
+  box-shadow: 0 2px 16px rgba(74, 144, 226, 0.2);
 }
 
 /* 深色模式下的聚焦状态 */
 .dark .input-wrapper:focus-within {
-  border-color: var(--accent-primary);
-  box-shadow: 0 2px 12px rgba(96, 165, 250, 0.3);
+  background: #1e293b;
+  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: 0 2px 16px rgba(96, 165, 250, 0.3);
 }
 
 .question-input {
@@ -1471,6 +1535,12 @@ body {
 }
 
 /* 动画 */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-30px) rotate(120deg); }
+  66% { transform: translateY(30px) rotate(240deg); }
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -1503,8 +1573,17 @@ body {
     margin-left: 260px;
   }
   
+  .input-section {
+    left: 260px;
+  }
+  
   .sidebar.collapsed + .main-content {
     margin-left: var(--sidebar-collapsed-width);
+  }
+  
+  .sidebar.collapsed ~ * .input-section,
+  .sidebar.collapsed + .main-content + .input-section {
+    left: var(--sidebar-collapsed-width) !important;
   }
 }
 
