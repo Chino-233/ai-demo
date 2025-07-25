@@ -16,13 +16,21 @@ app.get('/api/health', (req, res) => {
 
 // AI问答接口
 app.post('/api/ask', async (req, res) => {
-  const { question } = req.body;
+  const { question, messages = [] } = req.body;
   
   // 参数验证
   if (!question || typeof question !== 'string' || question.trim().length === 0) {
     return res.status(400).json({ 
       error: '请提供有效的问题', 
       detail: '问题不能为空' 
+    });
+  }
+
+  // 验证消息历史格式
+  if (!Array.isArray(messages)) {
+    return res.status(400).json({ 
+      error: '消息历史格式错误', 
+      detail: 'messages必须是数组格式' 
     });
   }
 
@@ -36,28 +44,53 @@ app.post('/api/ask', async (req, res) => {
 
   try {
     console.log(`收到问题: ${question}`);
+    console.log(`对话历史条数: ${messages.length}`);
+    
+    // 构建消息历史，限制历史消息数量以避免超出token限制
+    const maxHistoryMessages = parseInt(process.env.MAX_HISTORY_MESSAGES) || 10;
+    const recentMessages = messages.slice(-maxHistoryMessages);
+    
+    // 构建发送给AI的消息数组
+    const aiMessages = [
+      {
+        role: 'system',
+        content: process.env.SYSTEM_PROMPT || '你是一个有用的AI助手，请用简洁明了的中文回答用户的问题。你能够根据之前的对话内容来理解上下文，提供连贯和相关的回答。'
+      }
+    ];
+    
+    // 添加历史消息
+    recentMessages.forEach(msg => {
+      if (msg.type === 'user') {
+        aiMessages.push({
+          role: 'user',
+          content: msg.content
+        });
+      } else if (msg.type === 'assistant') {
+        aiMessages.push({
+          role: 'assistant',
+          content: msg.content
+        });
+      }
+    });
+    
+    // 添加当前问题
+    aiMessages.push({
+      role: 'user',
+      content: question
+    });
     
     // 调用通义千问 API
     const response = await axios.post(
-      'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+      process.env.QWEN_API_URL || 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
       {
-        model: 'qwen-turbo',
+        model: process.env.QWEN_MODEL || 'qwen-turbo',
         input: {
-          messages: [
-            {
-              role: 'system',
-              content: '你是一个有用的AI助手，请用简洁明了的中文回答用户的问题。'
-            },
-            {
-              role: 'user', 
-              content: question
-            }
-          ]
+          messages: aiMessages
         },
         parameters: {
-          max_tokens: 1000,
-          temperature: 0.7,
-          top_p: 0.8
+          max_tokens: parseInt(process.env.MAX_TOKENS) || 1000,
+          temperature: parseFloat(process.env.TEMPERATURE) || 0.7,
+          top_p: parseFloat(process.env.TOP_P) || 0.8
         }
       },
       {
@@ -65,7 +98,7 @@ app.post('/api/ask', async (req, res) => {
           'Authorization': `Bearer ${process.env.QWEN_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 30000 // 30秒超时
+        timeout: parseInt(process.env.API_TIMEOUT) || 30000 // 可配置的超时时间
       }
     );
 

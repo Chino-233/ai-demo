@@ -455,8 +455,12 @@ const handleAsk = async () => {
   try {
     console.log('发送问题:', currentQuestion)
     
+    // 准备发送给后端的消息历史（排除当前正在发送的问题）
+    const historyMessages = current ? current.messages.slice(0, -2) : []; // 排除刚添加的用户问题和占位AI消息
+    
     const response = await axios.post('/api/ask', {
-      question: currentQuestion
+      question: currentQuestion,
+      messages: historyMessages
     }, {
       timeout: 35000 // 35秒超时
     })
