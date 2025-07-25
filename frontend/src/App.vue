@@ -68,71 +68,74 @@
 
       <!-- 主内容区 -->
       <main class="main-content">
-        <!-- 问答界面 -->
-        <div class="chat-container">
-          <!-- 欢迎区域 -->
-          <div v-if="!hasConversation" class="welcome-section">
-            <div class="welcome-content">
-              <div class="welcome-icon">✨</div>
-              <h2 class="welcome-title">你好！我是 AI 助手</h2>
-              <p class="welcome-subtitle">基于阿里云通义千问，为您提供智能问答服务</p>
-              <div class="example-questions">
-                <div class="example-title">试试这些问题：</div>
-                <div class="example-list">
+        <!-- 滚动容器 - 把滚动条放到右边缘 -->
+        <div class="scroll-container" ref="scrollContainer">
+          <!-- 问答界面 -->
+          <div class="chat-container">
+            <!-- 欢迎区域 -->
+            <div v-if="!hasConversation" class="welcome-section">
+              <div class="welcome-content">
+                <div class="welcome-icon">✨</div>
+                <h2 class="welcome-title">你好！我是 AI 助手</h2>
+                <p class="welcome-subtitle">基于阿里云通义千问，为您提供智能问答服务</p>
+                <div class="example-questions">
+                  <div class="example-title">试试这些问题：</div>
+                  <div class="example-list">
+                    <button 
+                      v-for="example in exampleQuestions" 
+                      :key="example"
+                      @click="setQuestion(example)"
+                      class="example-button"
+                    >
+                      {{ example }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 对话历史 -->
+            <div v-if="hasConversation" class="conversation-area">
+              <div class="messages" ref="messagesContainer">
+                <div v-for="(msg, index) in currentMessages" :key="index" class="message" :class="msg.type">
+                  <div class="message-avatar">
+                    <img 
+                      v-if="msg.type === 'user'" 
+                      src="/avatars/Chino.jpg"
+                      alt="用户头像"
+                      class="avatar-image"
+                    />
+                    <img 
+                      v-else 
+                      src="/avatars/1741874821056.jpeg"
+                      alt="AI助手头像"
+                      class="avatar-image"
+                    />
+                  </div>
+                  <div class="message-content">
+                    <div class="message-text">{{ msg.content }}</div>
+                    <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
+                  </div>
                   <button 
-                    v-for="example in exampleQuestions" 
-                    :key="example"
-                    @click="setQuestion(example)"
-                    class="example-button"
+                    v-if="msg.type === 'assistant' && msg.content"
+                    @click="copyMessage(msg.content, index)"
+                    class="copy-message-btn"
+                    :title="copiedIndex === index ? '已复制' : '复制回答'"
                   >
-                    {{ example }}
+                    <span v-if="copiedIndex === index">✅</span>
+                    <span v-else>📋</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 对话历史 -->
-          <div v-if="hasConversation" class="conversation-area">
-            <div class="messages" ref="messagesContainer">
-              <div v-for="(msg, index) in currentMessages" :key="index" class="message" :class="msg.type">
-                <div class="message-avatar">
-                  <img 
-                    v-if="msg.type === 'user'" 
-                    src="/avatars/Chino.jpg"
-                    alt="用户头像"
-                    class="avatar-image"
-                  />
-                  <img 
-                    v-else 
-                    src="/avatars/1741874821056.jpeg"
-                    alt="AI助手头像"
-                    class="avatar-image"
-                  />
-                </div>
-                <div class="message-content">
-                  <div class="message-text">{{ msg.content }}</div>
-                  <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
-                </div>
-                <button 
-                  v-if="msg.type === 'assistant' && msg.content"
-                  @click="copyMessage(msg.content, index)"
-                  class="copy-message-btn"
-                  :title="copiedIndex === index ? '已复制' : '复制回答'"
-                >
-                  <span v-if="copiedIndex === index">✅</span>
-                  <span v-else>📋</span>
-                </button>
+            <!-- 错误提示 -->
+            <div v-if="error" class="error-toast">
+              <div class="error-content">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">{{ error }}</span>
+                <button @click="error = ''" class="error-close">✕</button>
               </div>
-            </div>
-          </div>
-
-          <!-- 错误提示 -->
-          <div v-if="error" class="error-toast">
-            <div class="error-content">
-              <span class="error-icon">⚠️</span>
-              <span class="error-text">{{ error }}</span>
-              <button @click="error = ''" class="error-close">✕</button>
             </div>
           </div>
         </div>
@@ -188,6 +191,7 @@ const copiedIndex = ref(-1)
 const isDark = ref(false)
 const inputRef = ref(null)
 const messagesContainer = ref(null)
+const scrollContainer = ref(null)
 const sidebarCollapsed = ref(false)
 
 // 对话管理
@@ -505,8 +509,8 @@ const handleAsk = async () => {
 // 滚动到底部
 const scrollToBottom = () => {
   nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+    if (scrollContainer.value) {
+      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
     }
   })
 }
@@ -637,31 +641,35 @@ onMounted(() => {
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 }
 
-/* 基础样式 */
+/* 基础样式 - 重置全局，去掉任何多余的滚动 */
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  background: var(--bg-primary);
-  transition: background-color 0.3s ease;
-}
-
-body {
-  margin: 0;
-  padding: 0;
+html, body {
+  /* 固定到视口，禁止页面滚动 */
+  height: 100%;
+  width: 100%;
+  overflow: hidden; 
+  overscroll-behavior: none; /* 禁止所有方向的过度滚动链 */
   background: var(--bg-primary);
   transition: background-color 0.3s ease;
 }
 
 .app-container {
-  min-height: 100vh;
+  /* Vue SPA根节点固定 */
+  position: fixed;
+  top: 0; 
+  right: 0; 
+  bottom: 0; 
+  left: 0;
+  overflow: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: all 0.3s ease;
-  position: relative;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  overflow-x: hidden;
 }
 
 /* 背景装饰 */
@@ -712,9 +720,10 @@ body {
 /* 主布局 */
 .main-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100%;
   position: relative;
   z-index: 1;
+  overflow: hidden;
 }
 
 /* 侧边栏 */
@@ -728,10 +737,11 @@ body {
   position: fixed;
   top: 0;
   left: 0;
-  height: 100vh;
+  height: 100%;
   z-index: 100;
   backdrop-filter: blur(20px);
   box-shadow: 2px 0 12px rgba(74, 144, 226, 0.1);
+  overflow: hidden;
 }
 
 /* 深色模式下的侧边栏 */
@@ -1042,12 +1052,13 @@ body {
 .main-content {
   flex: 1;
   margin-left: var(--sidebar-width);
-  min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   transition: margin-left 0.3s ease;
   background: var(--bg-primary);
   position: relative;
+  overflow: hidden;
 }
 
 /* 深色模式下的主内容区 */
@@ -1059,21 +1070,28 @@ body {
   margin-left: var(--sidebar-collapsed-width);
 }
 
-/* 聊天容器 */
+/* 滚动容器 - 把滚动条放到右边缘 */
+.scroll-container {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 聊天容器 - 不再负责滚动，只负责布局 */
 .chat-container {
-  flex: 1;
   max-width: 800px;
   margin: 0 auto;
   padding: 24px;
+  padding-bottom: 140px; /* 为输入区域留出空间 */
   display: flex;
   flex-direction: column;
   gap: 24px;
   width: 100%;
   position: relative;
   z-index: 1;
-  overflow: hidden;
-  padding-bottom: 140px; /* 为输入区域留出空间 */
   background: transparent;
+  min-height: 100%;
 }
 
 /* 欢迎区域 */
@@ -1082,41 +1100,43 @@ body {
   align-items: center;
   justify-content: center;
   flex: 1;
-  min-height: 400px;
+  min-height: calc(100vh - 200px);
+  max-height: none;
 }
 
 .welcome-content {
   text-align: center;
   max-width: 600px;
+  padding: 0 20px;
 }
 
 .welcome-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 40px;
+  margin-bottom: 12px;
 }
 
 .welcome-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   color: var(--text-primary);
 }
 
 .welcome-subtitle {
-  font-size: 18px;
+  font-size: 16px;
   color: var(--text-secondary);
-  margin: 0 0 32px 0;
+  margin: 0 0 24px 0;
   line-height: 1.6;
 }
 
 .example-questions {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .example-title {
   font-size: 14px;
   color: var(--text-tertiary);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .example-list {
@@ -1161,20 +1181,18 @@ body {
 
 /* 对话区域 */
 .conversation-area {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  overflow: hidden;
+  overflow: visible;
   min-height: 0;
 }
 
 .messages {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  overflow-y: auto;
+  overflow: visible;
   padding: 16px;
   background: transparent;
   border-radius: var(--radius-md);
@@ -1670,44 +1688,44 @@ body {
 }
 
 /* 滚动条样式 */
-.messages::-webkit-scrollbar,
+.scroll-container::-webkit-scrollbar,
 .sidebar-content::-webkit-scrollbar {
   width: 8px;
 }
 
-.messages::-webkit-scrollbar-track,
+.scroll-container::-webkit-scrollbar-track,
 .sidebar-content::-webkit-scrollbar-track {
   background: rgba(74, 144, 226, 0.1);
   border-radius: 4px;
   margin: 4px;
 }
 
-.messages::-webkit-scrollbar-thumb,
+.scroll-container::-webkit-scrollbar-thumb,
 .sidebar-content::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #4a90e2 0%, #7bb3f0 100%);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.messages::-webkit-scrollbar-thumb:hover,
+.scroll-container::-webkit-scrollbar-thumb:hover,
 .sidebar-content::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #3b7dd6 0%, #6bb0ff 100%);
   box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
 }
 
 /* 深色模式下的滚动条 */
-.dark .messages::-webkit-scrollbar-track,
+.dark .scroll-container::-webkit-scrollbar-track,
 .dark .sidebar-content::-webkit-scrollbar-track {
   background: rgba(51, 65, 85, 0.5);
 }
 
-.dark .messages::-webkit-scrollbar-thumb,
+.dark .scroll-container::-webkit-scrollbar-thumb,
 .dark .sidebar-content::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #60a5fa 0%, #22d3ee 100%);
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-.dark .messages::-webkit-scrollbar-thumb:hover,
+.dark .scroll-container::-webkit-scrollbar-thumb:hover,
 .dark .sidebar-content::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #7bb3f0 0%, #34d4ea 100%);
   box-shadow: 0 2px 4px rgba(96, 165, 250, 0.3);
