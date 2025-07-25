@@ -163,4 +163,10 @@ app.listen(PORT, () => {
   console.log(`📍 服务地址: http://localhost:${PORT}`);
   console.log(`🔍 健康检查: http://localhost:${PORT}/api/health`);
   console.log(`💡 请确保已在.env文件中配置QWEN_API_KEY`);
+  console.log(`⚙️  配置信息:`);
+  console.log(`   - 模型: ${process.env.QWEN_MODEL || 'qwen-turbo'}`);
+  console.log(`   - 最大历史消息: ${process.env.MAX_HISTORY_MESSAGES || 10}`);
+  console.log(`   - 最大Token: ${process.env.MAX_TOKENS || 1000}`);
+  console.log(`   - 温度: ${process.env.TEMPERATURE || 0.7}`);
+  console.log(`   - API超时: ${process.env.API_TIMEOUT || 30000}ms`);
 });

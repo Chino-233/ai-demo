@@ -25,33 +25,37 @@
         </div>
 
         <div v-if="!sidebarCollapsed" class="sidebar-content">
-          <!-- 新建对话按钮 -->
-          <button @click="startNewConversation" class="new-chat-btn">
-            ✨ 新建对话
-          </button>
+          <!-- 新建对话按钮 - 固定在顶部 -->
+          <div class="sidebar-actions">
+            <button @click="startNewConversation" class="new-chat-btn">
+              ✨ 新建对话
+            </button>
+          </div>
 
-          <!-- 对话历史列表 -->
+          <!-- 对话历史列表 - 可滚动区域 -->
           <div class="conversation-list">
             <div class="conversation-list-header">
               <h3>对话历史</h3>
             </div>
-            <div class="conversation-items">
-              <div 
-                v-for="(conv, index) in conversations" 
-                :key="conv.id"
-                @click="switchConversation(conv.id)"
-                class="conversation-item"
-                :class="{ active: currentConversationId === conv.id }"
-              >
-                <div class="conversation-title">{{ conv.title }}</div>
-                <div class="conversation-time">{{ formatConversationTime(conv.updatedAt) }}</div>
-                <button 
-                  @click.stop="deleteConversation(conv.id)"
-                  class="delete-conversation-btn"
-                  title="删除对话"
+            <div class="conversation-items-container">
+              <div class="conversation-items">
+                <div 
+                  v-for="(conv, index) in conversations" 
+                  :key="conv.id"
+                  @click="switchConversation(conv.id)"
+                  class="conversation-item"
+                  :class="{ active: currentConversationId === conv.id }"
                 >
-                  🗑️
-                </button>
+                  <div class="conversation-title">{{ conv.title }}</div>
+                  <div class="conversation-time">{{ formatConversationTime(conv.updatedAt) }}</div>
+                  <button 
+                    @click.stop="deleteConversation(conv.id)"
+                    class="delete-conversation-btn"
+                    title="删除对话"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -858,11 +862,16 @@ html, body {
 
 .sidebar-content {
   flex: 1;
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
+  height: 100%;
+  overflow: hidden; /* 防止整个sidebar-content滚动 */
+}
+
+.sidebar-actions {
+  padding: 16px;
+  flex-shrink: 0; /* 防止压缩 */
+  border-bottom: 1px solid var(--border-color);
 }
 
 .new-chat-btn {
@@ -904,14 +913,25 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  overflow: hidden; /* 防止整个conversation-list滚动 */
+}
+
+.conversation-list-header {
+  padding: 16px 16px 8px 16px;
+  flex-shrink: 0;
 }
 
 .conversation-list-header h3 {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
-  margin: 0 0 8px 0;
+  margin: 0;
+}
+
+.conversation-items-container {
+  flex: 1;
+  overflow-y: auto; /* 只有这个容器可以滚动 */
+  padding: 0 16px 16px 16px;
 }
 
 .conversation-items {
@@ -1712,44 +1732,44 @@ html, body {
 
 /* 滚动条样式 */
 .scroll-container::-webkit-scrollbar,
-.sidebar-content::-webkit-scrollbar {
+.conversation-items-container::-webkit-scrollbar {
   width: 8px;
 }
 
 .scroll-container::-webkit-scrollbar-track,
-.sidebar-content::-webkit-scrollbar-track {
+.conversation-items-container::-webkit-scrollbar-track {
   background: rgba(74, 144, 226, 0.1);
   border-radius: 4px;
   margin: 4px;
 }
 
 .scroll-container::-webkit-scrollbar-thumb,
-.sidebar-content::-webkit-scrollbar-thumb {
+.conversation-items-container::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #4a90e2 0%, #7bb3f0 100%);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .scroll-container::-webkit-scrollbar-thumb:hover,
-.sidebar-content::-webkit-scrollbar-thumb:hover {
+.conversation-items-container::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #3b7dd6 0%, #6bb0ff 100%);
   box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
 }
 
 /* 深色模式下的滚动条 */
 .dark .scroll-container::-webkit-scrollbar-track,
-.dark .sidebar-content::-webkit-scrollbar-track {
+.dark .conversation-items-container::-webkit-scrollbar-track {
   background: rgba(51, 65, 85, 0.5);
 }
 
 .dark .scroll-container::-webkit-scrollbar-thumb,
-.dark .sidebar-content::-webkit-scrollbar-thumb {
+.dark .conversation-items-container::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #60a5fa 0%, #22d3ee 100%);
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .dark .scroll-container::-webkit-scrollbar-thumb:hover,
-.dark .sidebar-content::-webkit-scrollbar-thumb:hover {
+.dark .conversation-items-container::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #7bb3f0 0%, #34d4ea 100%);
   box-shadow: 0 2px 4px rgba(96, 165, 250, 0.3);
 }
