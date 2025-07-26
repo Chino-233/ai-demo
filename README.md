@@ -33,7 +33,7 @@ ai-qa-demo/
 └── README.md              # 项目文档
 ```
 ## 项目效果
-![项目效果](https://github.com/Chino-233/ai-qa-demo/images/1.png)
+![项目效果](/images/1.png)
 ## 快速开始
 
 ### 环境要求
@@ -97,12 +97,12 @@ copy .env.example .env
 ```bash
 npm start
 ```
-![启动后端服务](https://github.com/Chino-233/ai-qa-demo/images/2.png
+![启动后端服务](/images/2.png)  
 **启动前端服务**（在 frontend 目录）：
 ```bash
 npm run dev
 ```
-![启动前端服务](https://github.com/Chino-233/ai-qa-demo/images/3.png)
+![启动前端服务](/images/3.png)
 ### 5. 访问应用
 
 打开浏览器访问：http://localhost:5173
