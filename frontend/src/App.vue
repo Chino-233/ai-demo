@@ -25,14 +25,14 @@
         </div>
 
         <div v-if="!sidebarCollapsed" class="sidebar-content">
-          <!-- 新建对话按钮 - 固定在顶部 -->
+          <!-- 新建对话按钮 -->
           <div class="sidebar-actions">
             <button @click="startNewConversation" class="new-chat-btn">
               ✨ 新建对话
             </button>
           </div>
 
-          <!-- 对话历史列表 - 可滚动区域 -->
+          <!-- 对话历史列表  -->
           <div class="conversation-list">
             <div class="conversation-list-header">
               <h3>对话历史</h3>
@@ -72,108 +72,112 @@
 
       <!-- 主内容区 -->
       <main class="main-content">
-        <!-- 问答界面 -->
-        <div class="chat-container">
-          <!-- 欢迎区域 -->
-          <div v-if="!hasConversation" class="welcome-section">
-            <div class="welcome-content">
-              <div class="welcome-icon">✨</div>
-              <h2 class="welcome-title">你好！我是 AI 助手</h2>
-              <p class="welcome-subtitle">基于阿里云通义千问，为您提供智能问答服务</p>
-              <div class="example-questions">
-                <div class="example-title">试试这些问题：</div>
-                <div class="example-list">
+        <!-- 滚动容器 -->
+        <div class="scroll-container" ref="scrollContainer">
+          <!-- 问答界面 -->
+          <div class="chat-container">
+            <!-- 欢迎区域 -->
+            <div v-if="!hasConversation" class="welcome-section">
+              <div class="welcome-content">
+                <div class="welcome-icon">✨</div>
+                <h2 class="welcome-title">你好！我是 AI 助手</h2>
+                <p class="welcome-subtitle">基于阿里云通义千问，为您提供智能问答服务</p>
+                <div class="example-questions">
+                  <div class="example-title">试试这些问题：</div>
+                  <div class="example-list">
+                    <button 
+                      v-for="example in exampleQuestions" 
+                      :key="example"
+                      @click="setQuestion(example)"
+                      class="example-button"
+                    >
+                      {{ example }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          
+
+            <!-- 对话历史 -->
+            <div v-if="hasConversation" class="conversation-area">
+              <div class="messages" ref="messagesContainer">
+                <div v-for="(msg, index) in currentMessages" :key="index" class="message" :class="msg.type">
+                  <div class="message-avatar">
+                    <img 
+                      v-if="msg.type === 'user'" 
+                      src="/avatars/Chino.jpg"
+                      alt="用户头像"
+                      class="avatar-image"
+                    />
+                    <img 
+                      v-else 
+                      src="/avatars/1741874821056.jpeg"
+                      alt="AI助手头像"
+                      class="avatar-image"
+                    />
+                  </div>
+                  <div class="message-content">
+                    <div class="message-text">{{ msg.content }}</div>
+                    <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
+                  </div>
                   <button 
-                    v-for="example in exampleQuestions" 
-                    :key="example"
-                    @click="setQuestion(example)"
-                    class="example-button"
+                    v-if="msg.type === 'assistant' && msg.content"
+                    @click="copyMessage(msg.content, index)"
+                    class="copy-message-btn"
+                    :title="copiedIndex === index ? '已复制' : '复制回答'"
                   >
-                    {{ example }}
+                    <span v-if="copiedIndex === index">✅</span>
+                    <span v-else>📋</span>
                   </button>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- 对话历史 -->
-          <div v-if="hasConversation" class="conversation-area">
-            <div class="messages" ref="messagesContainer">
-              <div v-for="(msg, index) in currentMessages" :key="index" class="message" :class="msg.type">
-                <div class="message-avatar">
-                  <img 
-                    v-if="msg.type === 'user'" 
-                    src="/avatars/Chino.jpg"
-                    alt="用户头像"
-                    class="avatar-image"
-                  />
-                  <img 
-                    v-else 
-                    src="/avatars/1741874821056.jpeg"
-                    alt="AI助手头像"
-                    class="avatar-image"
-                  />
-                </div>
-                <div class="message-content">
-                  <div class="message-text">{{ msg.content }}</div>
-                  <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
-                </div>
-                <button 
-                  v-if="msg.type === 'assistant' && msg.content"
-                  @click="copyMessage(msg.content, index)"
-                  class="copy-message-btn"
-                  :title="copiedIndex === index ? '已复制' : '复制回答'"
-                >
-                  <span v-if="copiedIndex === index">✅</span>
-                  <span v-else>📋</span>
-                </button>
+            <!-- 错误提示 -->
+            <div v-if="error" class="error-toast">
+              <div class="error-content">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">{{ error }}</span>
+                <button @click="error = ''" class="error-close">✕</button>
               </div>
-            </div>
-          </div>
-
-          <!-- 错误提示 -->
-          <div v-if="error" class="error-toast">
-            <div class="error-content">
-              <span class="error-icon">⚠️</span>
-              <span class="error-text">{{ error }}</span>
-              <button @click="error = ''" class="error-close">✕</button>
             </div>
           </div>
         </div>
 
-        <!-- 输入区域 - 现在随内容滚动 -->
+        <!-- 输入区域 -->
         <div class="input-section">
-          <!-- 背景遮罩层 -->
-          <div class="input-mask"></div>
-          <div class="input-container">
-            <div class="input-wrapper">
-              <textarea
-                v-model="question"
-                :placeholder="loading ? '正在思考中...' : '输入你的问题，按 Enter 发送'"
-                class="question-input"
-                :disabled="loading"
-                @keydown.enter.exact.prevent="handleAsk"
-                @keydown.shift.enter.exact="() => {}"
-                @input="onInput"
-                rows="3"
-                ref="inputRef"
-              ></textarea>
-              <button
-                @click="handleAsk"
-                :disabled="loading || !question.trim()"
-                class="send-button"
-                :class="{ loading: loading }"
-              >
-                <span v-if="loading" class="loading-spinner">⏳</span>
-                <span v-else>🚀</span>
-              </button>
-            </div>
-            <div class="input-footer">
-              <div class="char-count" :class="{ warning: question.length > 800 }">
-                {{ question.length }}/1000
+            <!-- 背景遮罩层 -->
+            <div class="input-mask"></div>
+            <div class="input-container">
+              <div class="input-wrapper">
+                <textarea
+                  v-model="question"
+                  :placeholder="loading ? '正在思考中...' : '输入你的问题，按 Enter 发送'"
+                  class="question-input"
+                  :disabled="loading"
+                  @keydown.enter.exact.prevent="handleAsk"
+                  @keydown.shift.enter.exact="() => {}"
+                  @input="onInput"
+                  rows="3"
+                  ref="inputRef"
+                ></textarea>
+                <button
+                  @click="handleAsk"
+                  :disabled="loading || !question.trim()"
+                  class="send-button"
+                  :class="{ loading: loading }"
+                >
+                  <span v-if="loading" class="loading-spinner">⏳</span>
+                  <span v-else>提问</span>
+                </button>
+              </div>
+              <div class="input-footer">
+                <div class="char-count" :class="{ warning: question.length > 800 }">
+                  {{ question.length }}/1000
+                </div>
               </div>
             </div>
-          </div>
         </div>
       </main>
     </div>
@@ -404,7 +408,7 @@ const handleAsk = async () => {
     return
   }
 
-  // 如果没有当前对话，创建新对话（这是用户第一次提问）
+  // 如果没有当前对话，创建新对话（第一次提问）
   if (!currentConversationId.value) {
     const newConversation = {
       id: generateConversationId(),
@@ -430,7 +434,7 @@ const handleAsk = async () => {
   if (current) {
     current.messages.push(userMessage)
     
-    // 如果是第一条消息，更新对话标题
+    // 根据第一条消息更新对话标题
     if (current.messages.length === 1) {
       current.title = generateConversationTitle(question.value)
     }
@@ -452,7 +456,7 @@ const handleAsk = async () => {
   if (current) {
     current.messages.push(aiMessage)
   }
-
+  // 发送问题到后端
   try {
     console.log('发送问题:', currentQuestion)
     
@@ -465,7 +469,7 @@ const handleAsk = async () => {
     }, {
       timeout: 35000 // 35秒超时
     })
-
+    // 接受后端响应
     if (response.data.success && response.data.answer) {
       // 更新AI消息
       if (current && current.messages.length > 0) {
@@ -485,7 +489,7 @@ const handleAsk = async () => {
   } catch (err) {
     console.error('请求失败:', err)
     
-    // 移除占位消息
+    // 移除占位消息，处理失败信息
     if (current && current.messages.length > 0) {
       current.messages.pop()
     }
@@ -514,7 +518,6 @@ const handleAsk = async () => {
 // 滚动到底部
 const scrollToBottom = () => {
   nextTick(() => {
-    // 滚动到底部 - 现在使用scroll-container
     if (scrollContainer.value) {
       scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight
     }
@@ -533,7 +536,7 @@ const copyMessage = async (content, index) => {
     }, 2000)
   } catch (err) {
     console.error('复制失败:', err)
-    // 降级方案
+    // 失败后备用方案
     const textArea = document.createElement('textarea')
     textArea.value = content
     document.body.appendChild(textArea)
@@ -571,7 +574,6 @@ onMounted(() => {
     isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
   }
 
-  // 确保初始化时也设置document.documentElement的dark类
   if (isDark.value) {
     document.documentElement.classList.add('dark')
   } else {
@@ -585,11 +587,10 @@ onMounted(() => {
 
   loadConversations()
   
-  // 如果没有任何对话历史，默认显示欢迎页面（currentConversationId 为 null）
+  // 如果没有任何对话历史，默认显示欢迎页面
   if (conversations.value.length === 0) {
     currentConversationId.value = null
   } else {
-    // 如果有对话历史，默认选中第一个
     currentConversationId.value = conversations.value[0].id
   }
   
@@ -647,7 +648,7 @@ onMounted(() => {
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 }
 
-/* 基础样式 - 重置全局，去掉任何多余的滚动 */
+/* 基础样式 */
 * {
   margin: 0;
   padding: 0;
@@ -655,11 +656,11 @@ onMounted(() => {
 }
 
 html, body {
-  /* 固定到视口，禁止页面滚动 */
+  /* 固定到视口 */
   height: 100%;
   width: 100%;
   overflow: hidden; 
-  overscroll-behavior: none; /* 禁止所有方向的过度滚动链 */
+  overscroll-behavior: none; 
   background: var(--bg-primary);
   transition: background-color 0.3s ease;
 }
